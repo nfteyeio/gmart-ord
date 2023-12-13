@@ -316,6 +316,7 @@ impl Server {
           get(Self::children_recursive_paginated),
         )
         .route("/r/metadata/:inscription_id", get(Self::metadata))
+        .route("/r/metaprotocol/:inscription_id", get(Self::metaprotocol))
         .route("/r/sat/:sat_number", get(Self::sat_inscriptions))
         .route(
           "/r/sat/:sat_number/:page",
@@ -1063,6 +1064,20 @@ impl Server {
       .ok_or_not_found(|| format!("inscription {inscription_id} metadata"))?;
 
     Ok(Json(hex::encode(metadata)))
+  }
+
+  async fn metaprotocol(
+    Extension(index): Extension<Arc<Index>>,
+    Path(inscription_id): Path<InscriptionId>,
+  ) -> ServerResult<String> {
+    log::info!("GET /metaprotocol/{inscription_id}");
+    let metaprotocol = index
+      .get_inscription_by_id(inscription_id)?
+      .ok_or_not_found(|| format!("inscription {inscription_id}"))?
+      .metaprotocol
+      .ok_or_not_found(|| format!("inscription {inscription_id} metaprotocol"))?;
+
+    Ok(String::from_utf8_lossy(&metaprotocol).to_string())
   }
 
   async fn stats(Extension(index): Extension<Arc<Index>>) -> ServerResult<String> {
